@@ -50,8 +50,8 @@ def graph_metrics(user_id: str):
         Internal error during analysis (details logged server-side only).
     """
     try:
-        # Validate user_id format to prevent abuse
         if not _USER_ID_RE.match(user_id):
+            logger.warning(f"Invalid user_id format: {user_id}")
             return jsonify({'error': 'Invalid user_id format'}), 400
 
         mongo = current_app.mongo['posts']

@@ -373,6 +373,24 @@ class TestToNetworkx:
             assert "relation" in data
             assert data["relation"] in ("overlapping", "adjacent", "disjoint")
 
+    def test_networkx_edge_has_weight(self, base_time):
+        ep1 = Episode(
+            start_time=base_time,
+            end_time=base_time + timedelta(hours=2),
+            events=(),
+        )
+        ep2 = Episode(
+            start_time=base_time + timedelta(hours=1),
+            end_time=base_time + timedelta(hours=3),
+            events=(),
+        )
+        graph = build_narrative_graph([ep1, ep2])
+        G = graph.to_networkx()
+
+        for u, v, data in G.edges(data=True):
+            assert "weight" in data
+            assert 0.0 <= data["weight"] <= 1.0
+
     def test_empty_graph_to_networkx(self):
         graph = build_narrative_graph([])
         G = graph.to_networkx()
@@ -424,7 +442,9 @@ class TestEdgesInResponse:
         assert "source" in edge
         assert "target" in edge
         assert "relation" in edge
+        assert "weight" in edge
         assert edge["source"] < edge["target"]  # DAG ordering
+        assert 0.0 <= edge["weight"] <= 1.0
 
     def test_disconnected_graph_has_no_edges(self, base_time):
         ep1 = make_episode(base_time, 0, 1, ["positive"])

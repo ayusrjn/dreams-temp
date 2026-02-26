@@ -56,4 +56,7 @@ def create_app(test_config=None):
     from .dashboard import bp as dashboard_bp
     app.register_blueprint(dashboard_bp)
 
+    from .analytics import bp as analytics_bp
+    app.register_blueprint(analytics_bp)
+
     return app

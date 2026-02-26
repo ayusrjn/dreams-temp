@@ -71,6 +71,56 @@ class TemporalNarrativeGraph:
     def edges_by_relation(self, relation: ProximityRelation) -> Tuple[NarrativeEdge, ...]:
         return tuple(edge for edge in self.edges if edge.relation == relation)
     
+    def to_networkx(self) -> Any:
+        """
+        Convert to a networkx directed graph for graph-theoretic analysis.
+
+        Each node is identified by its integer index (0..N-1).
+        Node attributes:
+            - start_time: datetime (from the Episode)
+            - end_time: datetime (from the Episode)
+            - emotion_label: str — the dominant (most frequent) emotion_label
+              among the Episode's events; ``None`` if episode has no events.
+            - event_count: int — number of EmotionEvents in the episode.
+
+        Edge attributes:
+            - relation: str — the ProximityRelation.value
+              ('overlapping', 'adjacent', 'disjoint').
+
+        Returns:
+            networkx.DiGraph
+        """
+        import networkx as nx  # lazy import to avoid hard module-level dep
+        from collections import Counter
+        
+        G = nx.DiGraph()
+        
+        for i, episode in enumerate(self.nodes):
+            if episode.events:
+                label_counts = Counter(
+                    e.emotion_label for e in episode.events
+                )
+                dominant_label = label_counts.most_common(1)[0][0]
+            else:
+                dominant_label = None
+            
+            G.add_node(
+                i,
+                start_time=episode.start_time,
+                end_time=episode.end_time,
+                emotion_label=dominant_label,
+                event_count=len(episode.events),
+            )
+        
+        for edge in self.edges:
+            G.add_edge(
+                edge.source_index,
+                edge.target_index,
+                relation=edge.relation.value,
+            )
+        
+        return G
+    
     def to_dict(self) -> Dict[str, Any]:
         return {
             'nodes': [node.to_dict() for node in self.nodes],

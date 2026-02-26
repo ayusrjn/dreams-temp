@@ -206,6 +206,13 @@ def profile(target):
         latest_post=latest_post  # Pass only the latest post for feedback
     )
 
+@bp.route('/user/<string:target>/narrative', methods=['GET'])
+@login_required
+def narrative(target):
+    """Render the Narrative Structure Analysis visualization page."""
+    return render_template('dashboard/narrative.html', user_id=target)
+
+
 @bp.route('/clusters/<user_id>')
 @login_required
 def show_clusters(user_id):

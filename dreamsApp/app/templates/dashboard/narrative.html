@@ -1,0 +1,745 @@
+{% extends 'base.html' %}
+{% block title %}Narrative Analysis – {{ user_id }}{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+
+    h2.section-title {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #ffffff;
+    }
+
+    p.section-description {
+        font-size: 1rem;
+        color: #cccccc;
+        margin-bottom: 2rem;
+    }
+
+    .section {
+        padding: 3rem 0;
+        border-top: 1px solid #333;
+    }
+
+    .section:first-of-type {
+        border-top: none;
+    }
+
+    /* ── Summary Cards ── */
+    .metric-card {
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0.5rem 1rem rgba(255, 255, 255, 0.05);
+    }
+
+    .metric-card .metric-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #90caf9;
+    }
+
+    .metric-card .metric-label {
+        font-size: 0.85rem;
+        color: #aaa;
+        margin-top: 0.3rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* ── Graph Container ── */
+    #narrative-graph {
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    #narrative-graph svg {
+        display: block;
+        width: 100%;
+        height: 520px;
+    }
+
+    /* ── Legend ── */
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 1.2rem;
+        font-size: 0.85rem;
+        color: #ccc;
+    }
+
+    .legend-swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        margin-right: 6px;
+        display: inline-block;
+    }
+
+    /* ── Tooltip ── */
+    .graph-tooltip {
+        position: absolute;
+        padding: 10px 14px;
+        background: rgba(30, 30, 30, 0.96);
+        border: 1px solid #555;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        color: #e0e0e0;
+        pointer-events: none;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        max-width: 260px;
+    }
+
+    .graph-tooltip .tt-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+    }
+
+    .graph-tooltip .tt-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .graph-tooltip .tt-key { color: #aaa; }
+    .graph-tooltip .tt-val { color: #90caf9; font-weight: 500; }
+
+    /* ── Charts ── */
+    .chart-container {
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        border-radius: 1rem;
+        padding: 1.5rem;
+    }
+
+    /* ── Transition Table ── */
+    .transition-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .transition-table th {
+        background-color: #252525;
+        color: #aaa;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 10px 16px;
+        border-bottom: 1px solid #333;
+    }
+
+    .transition-table td {
+        padding: 10px 16px;
+        border-bottom: 1px solid #2a2a2a;
+        color: #e0e0e0;
+        font-size: 0.9rem;
+    }
+
+    .transition-table tr:hover td {
+        background-color: #252525;
+    }
+
+    .transition-arrow {
+        color: #90caf9;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin: 0 6px;
+    }
+
+    /* ── Cycle Badges ── */
+    .cycle-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #1e1e1e;
+        border: 1px solid #444;
+        border-radius: 2rem;
+        padding: 6px 14px;
+        margin: 4px;
+        font-size: 0.82rem;
+    }
+
+    .cycle-step {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.78rem;
+    }
+
+    .cycle-arrow {
+        margin: 0 4px;
+        color: #666;
+    }
+
+    /* ── Back Link ── */
+    .back-link {
+        color: #90caf9;
+        text-decoration: none;
+        font-size: 0.95rem;
+    }
+
+    .back-link:hover {
+        color: #bbdefb;
+        text-decoration: underline;
+    }
+
+    /* ── Page Header ── */
+    .page-title {
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .page-intro {
+        max-width: 720px;
+    }
+
+    /* ── First section override ── */
+    .section-first {
+        border-top: none;
+        padding-top: 0;
+    }
+
+    /* ── Legend swatches (one per emotion) ── */
+    .legend-swatch-positive { background: #66bb6a; }
+    .legend-swatch-negative { background: #ef5350; }
+    .legend-swatch-neutral  { background: #78909c; }
+
+    /* ── Chart panel typography ── */
+    .chart-title {
+        color: #fff;
+        margin-bottom: 1rem;
+    }
+
+    .chart-desc {
+        color: #999;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+    }
+
+    /* ── Canvas wrapper (fixes Chart.js height) ── */
+    .chart-canvas-wrapper {
+        position: relative;
+        height: 280px;
+    }
+
+    /* ── Table corner rounding ── */
+    .th-left-rounded  { border-radius: 1rem 0 0 0; }
+    .th-right-rounded { border-radius: 0 1rem 0 0; text-align: right; }
+
+    /* ── Initially hidden elements (shown by JS when needed) ── */
+    .initially-hidden { display: none; }
+</style>
+
+<div class="container py-4">
+
+    <!-- Breadcrumb -->
+    <div class="mb-4">
+        <a href="{{ url_for('dashboard.profile', target=user_id) }}" class="back-link">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to {{ user_id }}'s Profile
+        </a>
+    </div>
+
+    <h1 class="mb-1 page-title">Narrative Structure Analysis</h1>
+    <p class="section-description page-intro mb-4">
+        Explore the emotional narrative graph built from this user's posts.
+        Episodes are connected by temporal proximity and the graph reveals how emotional states transition and relate over time.
+    </p>
+
+    <!-- ═══════════════ Summary Cards ═══════════════ -->
+    <section class="section section-first">
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="mc-nodes">–</div>
+                    <div class="metric-label">Episodes</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="mc-edges">–</div>
+                    <div class="metric-label">Connections</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="mc-density">–</div>
+                    <div class="metric-label">Density</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="mc-components">–</div>
+                    <div class="metric-label">Components</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ Interactive Graph ═══════════════ -->
+    <section class="section">
+        <h2 class="section-title">Emotional Narrative Graph</h2>
+        <p class="section-description">
+            Each node is an emotional episode; edges show temporal connections.
+            Node size reflects betweenness centrality — larger nodes are narrative "hubs".
+            Hover for details.
+        </p>
+        <div class="mb-3">
+            <span class="legend-item"><span class="legend-swatch legend-swatch-positive"></span> Positive</span>
+            <span class="legend-item"><span class="legend-swatch legend-swatch-negative"></span> Negative</span>
+            <span class="legend-item"><span class="legend-swatch legend-swatch-neutral"></span> Neutral</span>
+        </div>
+        <div id="narrative-graph">
+            <div class="text-center py-5 text-muted" id="graph-loading">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Loading graph…
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ Charts Row ═══════════════ -->
+    <section class="section">
+        <div class="row g-4">
+            <!-- Centrality Chart -->
+            <div class="col-md-7">
+                <div class="chart-container">
+                    <h5 class="chart-title">Episode Centrality</h5>
+                    <p class="chart-desc">
+                        Betweenness centrality shows which episodes are important "bridges" in the emotional narrative.
+                    </p>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="centralityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Distribution Donut -->
+            <div class="col-md-5">
+                <div class="chart-container">
+                    <h5 class="chart-title">Emotion Distribution</h5>
+                    <p class="chart-desc">
+                        Proportion of episodes by dominant emotion.
+                    </p>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ Transitions & Cycles ═══════════════ -->
+    <section class="section">
+        <div class="row g-4">
+            <!-- Common Transitions -->
+            <div class="col-md-7">
+                <h2 class="section-title">Common Emotional Transitions</h2>
+                <p class="section-description">
+                    The most frequent emotion-to-emotion shifts in the narrative timeline.
+                </p>
+                <div class="chart-container p-0 overflow-hidden">
+                    <table class="transition-table" id="transitions-table">
+                        <thead>
+                            <tr>
+                                <th class="th-left-rounded">Rank</th>
+                                <th>Transition</th>
+                                <th class="th-right-rounded">Occurrences</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transitions-body"></tbody>
+                    </table>
+                    <div class="text-center text-muted py-3 initially-hidden" id="transitions-empty">
+                        No transitions detected.
+                    </div>
+                </div>
+            </div>
+            <!-- Emotional Cycles -->
+            <div class="col-md-5">
+                <h2 class="section-title">Emotional Cycles</h2>
+                <p class="section-description">
+                    Recurring emotional loops — patterns where the user cycles between the same emotions.
+                </p>
+                <div class="chart-container" id="cycles-container">
+                    <div class="text-muted initially-hidden" id="cycles-empty">
+                        No emotional cycles detected.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Dependencies (CDN only — matches existing pattern)
+     ═══════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+
+<script>
+(function () {
+    "use strict";
+
+    // ── Colour Palette ──
+    const EMOTION_COLORS = {
+        positive: "#66bb6a",
+        negative: "#ef5350",
+        neutral:  "#78909c",
+    };
+
+    const fallbackColor = "#555";
+
+    function emotionColor(label) {
+        return EMOTION_COLORS[(label || "").toLowerCase()] || fallbackColor;
+    }
+
+    // ── Fetch metrics from API ──
+    const userId = {{ user_id | tojson }};
+    const apiUrl = `/api/analytics/graph-metrics/${encodeURIComponent(userId)}`;
+
+    fetch(apiUrl, { credentials: "same-origin" })
+        .then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        })
+        .then(data => render(data.metrics))
+        .catch(err => {
+            console.error("Narrative API error:", err);
+            document.getElementById("graph-loading").innerHTML =
+                '<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> Failed to load narrative data.</span>';
+        });
+
+    // ── Main Render ──
+    function render(m) {
+        renderSummaryCards(m.graph_summary);
+        renderGraph(m.node_metrics, m.edges || []);
+        renderCentralityChart(m.node_metrics);
+        renderDistributionChart(m.pattern_analysis.label_distribution);
+        renderTransitions(m.pattern_analysis.common_transitions);
+        renderCycles(m.pattern_analysis.emotional_cycles);
+    }
+
+    // ── Summary Cards ──
+    function renderSummaryCards(gs) {
+        document.getElementById("mc-nodes").textContent = gs.node_count;
+        document.getElementById("mc-edges").textContent = gs.edge_count;
+        document.getElementById("mc-density").textContent = gs.density.toFixed(3);
+        document.getElementById("mc-components").textContent = gs.connected_components;
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  D3 Force-Directed Graph
+    // ══════════════════════════════════════════════════════
+    function renderGraph(nodeMetrics, edges) {
+        const container = document.getElementById("narrative-graph");
+        container.innerHTML = "";  // remove spinner
+
+        if (nodeMetrics.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center py-5">No episodes to display.</p>';
+            return;
+        }
+
+        const width  = container.clientWidth;
+        const height = 520;
+
+        // Build node data
+        const nodes = nodeMetrics.map(n => ({
+            id:    n.node_index,
+            label: n.emotion_label,
+            bc:    n.betweenness_centrality,
+            dc:    n.degree_centrality,
+            start: n.start_time,
+            end:   n.end_time,
+            count: n.event_count,
+        }));
+
+        // Build links from the real edge list returned by the API
+        const links = edges.map(e => ({
+            source: e.source,
+            target: e.target,
+            relation: e.relation || "",
+        }));
+
+        // Scale node radius by betweenness centrality
+        const maxBC = d3.max(nodes, n => n.bc) || 1;
+        const rScale = d3.scaleLinear().domain([0, maxBC]).range([8, 28]);
+
+        const svg = d3.select(container)
+            .append("svg")
+            .attr("viewBox", `0 0 ${width} ${height}`)
+            .attr("preserveAspectRatio", "xMidYMid meet");
+
+        // Arrow marker
+        svg.append("defs").append("marker")
+            .attr("id", "arrow")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 20)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("fill", "#555");
+
+        // Simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(90))
+            .force("charge", d3.forceManyBody().strength(-250))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("y", d3.forceY(height / 2).strength(0.06))
+            .force("x", d3.forceX(width / 2).strength(0.06))
+            .force("collision", d3.forceCollide().radius(d => rScale(d.bc) + 4));
+
+        // Links
+        const link = svg.append("g")
+            .selectAll("line")
+            .data(links)
+            .join("line")
+            .attr("stroke", "#444")
+            .attr("stroke-width", 1.5)
+            .attr("marker-end", "url(#arrow)");
+
+        // Nodes
+        const node = svg.append("g")
+            .selectAll("circle")
+            .data(nodes)
+            .join("circle")
+            .attr("r", d => rScale(d.bc))
+            .attr("fill", d => emotionColor(d.label))
+            .attr("stroke", "#222")
+            .attr("stroke-width", 2)
+            .style("cursor", "pointer")
+            .call(drag(simulation));
+
+        // Node index labels
+        svg.append("g")
+            .selectAll("text")
+            .data(nodes)
+            .join("text")
+            .text(d => d.id)
+            .attr("font-size", 10)
+            .attr("fill", "#fff")
+            .attr("text-anchor", "middle")
+            .attr("dy", 4)
+            .style("pointer-events", "none");
+
+        // Tooltip
+        const tooltip = d3.select("body").append("div").attr("class", "graph-tooltip").style("display", "none");
+
+        node.on("mouseover", (event, d) => {
+                tooltip.style("display", "block")
+                    .html(`
+                        <div class="tt-label" style="color:${emotionColor(d.label)}">
+                            Episode ${d.id} — ${escapeHtml(capitalize(d.label))}
+                        </div>
+                        <div class="tt-row"><span class="tt-key">Events</span><span class="tt-val">${d.count}</span></div>
+                        <div class="tt-row"><span class="tt-key">Start</span><span class="tt-val">${escapeHtml(fmtDate(d.start))}</span></div>
+                        <div class="tt-row"><span class="tt-key">End</span><span class="tt-val">${escapeHtml(fmtDate(d.end))}</span></div>
+                        <div class="tt-row"><span class="tt-key">Betweenness</span><span class="tt-val">${d.bc.toFixed(4)}</span></div>
+                        <div class="tt-row"><span class="tt-key">Degree</span><span class="tt-val">${d.dc.toFixed(4)}</span></div>
+                    `);
+            })
+            .on("mousemove", event => {
+                tooltip
+                    .style("left", (event.pageX + 14) + "px")
+                    .style("top", (event.pageY - 10) + "px");
+            })
+            .on("mouseout", () => tooltip.style("display", "none"));
+
+        // Tick update
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("cx", d => d.x = clamp(d.x, 30, width - 30))
+                .attr("cy", d => d.y = clamp(d.y, 30, height - 30));
+
+            svg.selectAll("text")
+                .attr("x", (d, i) => nodes[i] ? nodes[i].x : 0)
+                .attr("y", (d, i) => nodes[i] ? nodes[i].y : 0);
+        });
+
+        function drag(sim) {
+            return d3.drag()
+                .on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+                .on("drag",  (e, d) => { d.fx = e.x; d.fy = e.y; })
+                .on("end",   (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; });
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  Centrality Bar Chart (Chart.js)
+    // ══════════════════════════════════════════════════════
+    function renderCentralityChart(nodeMetrics) {
+        if (nodeMetrics.length === 0) return;
+
+        const ctx = document.getElementById("centralityChart").getContext("2d");
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: nodeMetrics.map(n => `Ep ${n.node_index}`),
+                datasets: [{
+                    label: "Betweenness Centrality",
+                    data: nodeMetrics.map(n => n.betweenness_centrality),
+                    backgroundColor: nodeMetrics.map(n => emotionColor(n.emotion_label) + "cc"),
+                    borderColor: nodeMetrics.map(n => emotionColor(n.emotion_label)),
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: items => `Episode ${nodeMetrics[items[0].dataIndex].node_index}`,
+                            label: item => `Betweenness: ${item.raw.toFixed(4)}`,
+                            afterLabel: item => `Emotion: ${capitalize(nodeMetrics[item.dataIndex].emotion_label)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: "#888" }, grid: { color: "#2a2a2a" } },
+                    y: { ticks: { color: "#888" }, grid: { color: "#2a2a2a" }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  Emotion Distribution Donut (Chart.js)
+    // ══════════════════════════════════════════════════════
+    function renderDistributionChart(dist) {
+        const labels = Object.keys(dist);
+        if (labels.length === 0) return;
+
+        const ctx = document.getElementById("distributionChart").getContext("2d");
+        new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels: labels.map(capitalize),
+                datasets: [{
+                    data: labels.map(l => dist[l]),
+                    backgroundColor: labels.map(l => emotionColor(l)),
+                    borderColor: "#1e1e1e",
+                    borderWidth: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "60%",
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { color: "#ccc", padding: 16, usePointStyle: true, pointStyleWidth: 12 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: item => ` ${item.label}: ${item.raw} episodes`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  Transitions Table
+    // ══════════════════════════════════════════════════════
+    function renderTransitions(transitions) {
+        const tbody = document.getElementById("transitions-body");
+
+        if (!transitions || transitions.length === 0) {
+            document.getElementById("transitions-empty").style.display = "block";
+            document.getElementById("transitions-table").querySelector("thead").style.display = "none";
+            return;
+        }
+
+        transitions.forEach((t, i) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td style="color:#666; font-weight: 600;">${i + 1}</td>
+                <td>
+                    <span style="color:${emotionColor(t.source_emotion)}; font-weight: 600;">${escapeHtml(capitalize(t.source_emotion))}</span>
+                    <span class="transition-arrow">→</span>
+                    <span style="color:${emotionColor(t.target_emotion)}; font-weight: 600;">${escapeHtml(capitalize(t.target_emotion))}</span>
+                </td>
+                <td style="text-align: right; font-weight: 500;">${t.count}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  Emotional Cycles
+    // ══════════════════════════════════════════════════════
+    function renderCycles(cycles) {
+        const container = document.getElementById("cycles-container");
+
+        if (!cycles || cycles.length === 0) {
+            document.getElementById("cycles-empty").style.display = "block";
+            return;
+        }
+
+        cycles.forEach(cycle => {
+            const badge = document.createElement("div");
+            badge.className = "cycle-badge";
+
+            // Build cycle display: A → B → C → A (close the loop)
+            const full = [...cycle, cycle[0]];
+            badge.innerHTML = full.map((label, i) => {
+                const color = emotionColor(label);
+                const step = `<span class="cycle-step" style="background:${color}22; color:${color};">${escapeHtml(capitalize(label))}</span>`;
+                return i < full.length - 1
+                    ? step + '<span class="cycle-arrow">→</span>'
+                    : step;
+            }).join("");
+
+            container.appendChild(badge);
+        });
+    }
+
+    // ── Helpers ──
+    function escapeHtml(s) {
+        if (!s) return "";
+        return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ""; }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function fmtDate(iso) {
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                + " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+        } catch (_) { return iso; }
+    }
+})();
+</script>
+
+{% endblock %}

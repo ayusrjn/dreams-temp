@@ -197,6 +197,52 @@
         color: #bbdefb;
         text-decoration: underline;
     }
+
+    /* ── Page Header ── */
+    .page-title {
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .page-intro {
+        max-width: 720px;
+    }
+
+    /* ── First section override ── */
+    .section-first {
+        border-top: none;
+        padding-top: 0;
+    }
+
+    /* ── Legend swatches (one per emotion) ── */
+    .legend-swatch-positive { background: #66bb6a; }
+    .legend-swatch-negative { background: #ef5350; }
+    .legend-swatch-neutral  { background: #78909c; }
+
+    /* ── Chart panel typography ── */
+    .chart-title {
+        color: #fff;
+        margin-bottom: 1rem;
+    }
+
+    .chart-desc {
+        color: #999;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+    }
+
+    /* ── Canvas wrapper (fixes Chart.js height) ── */
+    .chart-canvas-wrapper {
+        position: relative;
+        height: 280px;
+    }
+
+    /* ── Table corner rounding ── */
+    .th-left-rounded  { border-radius: 1rem 0 0 0; }
+    .th-right-rounded { border-radius: 0 1rem 0 0; text-align: right; }
+
+    /* ── Initially hidden elements (shown by JS when needed) ── */
+    .initially-hidden { display: none; }
 </style>
 
 <div class="container py-4">
@@ -208,14 +254,14 @@
         </a>
     </div>
 
-    <h1 class="mb-1" style="color: #fff; font-weight: 700;">Narrative Structure Analysis</h1>
-    <p class="section-description mb-4" style="max-width: 720px;">
+    <h1 class="mb-1 page-title">Narrative Structure Analysis</h1>
+    <p class="section-description page-intro mb-4">
         Explore the emotional narrative graph built from this user's posts.
         Episodes are connected by temporal proximity and the graph reveals how emotional states transition and relate over time.
     </p>
 
     <!-- ═══════════════ Summary Cards ═══════════════ -->
-    <section class="section" style="border-top: none; padding-top: 0;">
+    <section class="section section-first">
         <div class="row g-3">
             <div class="col-6 col-md-3">
                 <div class="metric-card">
@@ -253,9 +299,9 @@
             Hover for details.
         </p>
         <div class="mb-3">
-            <span class="legend-item"><span class="legend-swatch" style="background:#66bb6a;"></span> Positive</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:#ef5350;"></span> Negative</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:#78909c;"></span> Neutral</span>
+            <span class="legend-item"><span class="legend-swatch legend-swatch-positive"></span> Positive</span>
+            <span class="legend-item"><span class="legend-swatch legend-swatch-negative"></span> Negative</span>
+            <span class="legend-item"><span class="legend-swatch legend-swatch-neutral"></span> Neutral</span>
         </div>
         <div id="narrative-graph">
             <div class="text-center py-5 text-muted" id="graph-loading">
@@ -271,11 +317,11 @@
             <!-- Centrality Chart -->
             <div class="col-md-7">
                 <div class="chart-container">
-                    <h5 style="color:#fff; margin-bottom: 1rem;">Episode Centrality</h5>
-                    <p style="color:#999; font-size: 0.85rem; margin-bottom: 1rem;">
+                    <h5 class="chart-title">Episode Centrality</h5>
+                    <p class="chart-desc">
                         Betweenness centrality shows which episodes are important "bridges" in the emotional narrative.
                     </p>
-                    <div style="position: relative; height: 280px;">
+                    <div class="chart-canvas-wrapper">
                         <canvas id="centralityChart"></canvas>
                     </div>
                 </div>
@@ -283,11 +329,11 @@
             <!-- Distribution Donut -->
             <div class="col-md-5">
                 <div class="chart-container">
-                    <h5 style="color:#fff; margin-bottom: 1rem;">Emotion Distribution</h5>
-                    <p style="color:#999; font-size: 0.85rem; margin-bottom: 1rem;">
+                    <h5 class="chart-title">Emotion Distribution</h5>
+                    <p class="chart-desc">
                         Proportion of episodes by dominant emotion.
                     </p>
-                    <div style="position: relative; height: 280px;">
+                    <div class="chart-canvas-wrapper">
                         <canvas id="distributionChart"></canvas>
                     </div>
                 </div>
@@ -304,18 +350,18 @@
                 <p class="section-description">
                     The most frequent emotion-to-emotion shifts in the narrative timeline.
                 </p>
-                <div class="chart-container p-0" style="overflow: hidden;">
+                <div class="chart-container p-0 overflow-hidden">
                     <table class="transition-table" id="transitions-table">
                         <thead>
                             <tr>
-                                <th style="border-radius: 1rem 0 0 0;">Rank</th>
+                                <th class="th-left-rounded">Rank</th>
                                 <th>Transition</th>
-                                <th style="border-radius: 0 1rem 0 0; text-align: right;">Occurrences</th>
+                                <th class="th-right-rounded">Occurrences</th>
                             </tr>
                         </thead>
                         <tbody id="transitions-body"></tbody>
                     </table>
-                    <div class="text-center text-muted py-3" id="transitions-empty" style="display: none;">
+                    <div class="text-center text-muted py-3 initially-hidden" id="transitions-empty">
                         No transitions detected.
                     </div>
                 </div>
@@ -327,7 +373,7 @@
                     Recurring emotional loops — patterns where the user cycles between the same emotions.
                 </p>
                 <div class="chart-container" id="cycles-container">
-                    <div class="text-muted" id="cycles-empty" style="display: none;">
+                    <div class="text-muted initially-hidden" id="cycles-empty">
                         No emotional cycles detected.
                     </div>
                 </div>

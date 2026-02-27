@@ -150,7 +150,7 @@ Each edge carries a `weight` field (0.0–1.0) that quantifies connection streng
 | Relation | Weight Formula | Intuition |
 |----------|---------------|----------|
 | `overlapping` | Always `1.0` | Simultaneous episodes are maximally connected |
-| `adjacent` | `1.0 − gap / threshold` | Linearly decreases as the gap grows; touching episodes get 1.0, episodes near the threshold get ~0.0 |
+| `adjacent` | `1.0 − gap / threshold` | Linearly decreases as the gap grows; touching episodes get 1.0, episodes at the threshold get 0.0 |
 | `disjoint` | Always `0.0` | No meaningful temporal connection |
 
 The weight is computed by `_compute_edge_weight()` and validated to stay within `[0.0, 1.0]`.

@@ -524,8 +524,15 @@
 
         // Simulation — spread nodes apart for clarity
         const nCount = nodes.length;
-        const linkDist = Math.max(120, 50 + nCount * 8);   // adaptive spacing
-        const chargeStr = Math.min(-300, -150 - nCount * 15); // stronger repulsion for more nodes
+        const MIN_LINK_DISTANCE = 120;
+        const BASE_LINK_DISTANCE = 50;
+        const LINK_DISTANCE_PER_NODE = 8;
+        const MAX_CHARGE_STRENGTH = -300;
+        const BASE_CHARGE_STRENGTH = -150;
+        const CHARGE_PER_NODE = -15;
+
+        const linkDist = Math.max(MIN_LINK_DISTANCE, BASE_LINK_DISTANCE + nCount * LINK_DISTANCE_PER_NODE);   // adaptive spacing
+        const chargeStr = Math.min(MAX_CHARGE_STRENGTH, BASE_CHARGE_STRENGTH + nCount * CHARGE_PER_NODE); // stronger repulsion for more nodes
 
         const simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links).id(d => d.id).distance(linkDist).strength(0.4))
@@ -537,8 +544,9 @@
             .velocityDecay(0.35)
             .alphaDecay(0.02);
 
-        // Scale edge stroke-width by weight (0–1 → 0.6px–2.5px)
-        const wScale = d3.scaleLinear().domain([0, 1]).range([0.6, 2.5]).clamp(true);
+        // Scale edge properties by weight
+        const wScale       = d3.scaleLinear().domain([0, 1]).range([0.6, 2.5]).clamp(true);  // stroke-width
+        const opacityScale = d3.scaleLinear().domain([0, 1]).range([0.25, 0.80]).clamp(true); // stroke-opacity
 
         // Links — curved paths for a more organic look
         const link = svg.append("g")
@@ -553,7 +561,7 @@
                 return src ? emotionColor(src.label) + "55" : "#44445580";
             })
             .attr("stroke-width", d => wScale(d.weight))
-            .attr("stroke-opacity", d => 0.25 + 0.55 * d.weight)
+            .attr("stroke-opacity", d => opacityScale(d.weight))
             .attr("marker-end", d => d.weight > 0.4 ? "url(#arrow)" : "url(#arrow-light)");
 
         // Nodes

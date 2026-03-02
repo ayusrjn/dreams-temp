@@ -212,6 +212,69 @@ def narrative(target):
     """Render the Narrative Structure Analysis visualization page."""
     return render_template('dashboard/narrative.html', user_id=target)
 
+@bp.route('/user/<string:target>/cluster_analysis', methods=['GET'])
+@login_required
+def cluster_analysis(target):
+    """Render the Cluster Analysis visualization page."""
+    return render_template('dashboard/cluster_analysis.html', user_id=target)
+
+@bp.route('/api/analytics/cluster-metrics/<user_id>', methods=['GET'])
+@login_required
+def get_cluster_metrics(user_id):
+    """Serve mock structural cluster data for the visualization page."""
+    import random
+    
+    # Mock data to match Phase 1 Exp 1 (Early Fusion)
+    np.random.seed(42)
+    points = []
+    themes = ['Home', 'Work', 'Travel', 'Outdoors', 'Social', 'Fitness']
+    emotions = ['Neutral', 'Anger', 'Surprise', 'Joy', 'Disgust', 'Fear']
+    colors = ['#90a4ae', '#ff6b6b', '#ffb74d', '#4dd0a1', '#9575cd', '#e57373']
+    
+    for i, (theme, emo, col) in enumerate(zip(themes, emotions, colors)):
+        cx, cy = np.random.uniform(-10, 10, 2)
+        count = int(np.random.normal(40, 10))
+        for _ in range(count):
+            points.append({
+                'x': float(np.random.normal(cx, 1.5)),
+                'y': float(np.random.normal(cy, 1.5)),
+                'cluster': i,
+                'theme': theme,
+                'emotion': emo,
+                'color': col
+            })
+            
+    # Add some noise
+    for _ in range(10):
+        points.append({
+            'x': float(np.random.uniform(-15, 15)),
+            'y': float(np.random.uniform(-15, 15)),
+            'cluster': -1,
+            'theme': 'Noise',
+            'emotion': 'Mixed',
+            'color': '#aaaaaa'
+        })
+        
+    return jsonify({
+        'metrics': {
+            'overview': {
+                'total_clusters': 6,
+                'total_memories': len(points) - 10,
+                'noise_percentage': round(10 / len(points) * 100, 1),
+                'avg_density': 0.85
+            },
+            'scatter_data': points,
+            'cluster_stats': [
+                {'theme': 'Home (Neutral)', 'count': 45},
+                {'theme': 'Work (Anger)', 'count': 38},
+                {'theme': 'Travel (Surprise)', 'count': 42},
+                {'theme': 'Outdoors (Joy)', 'count': 30},
+                {'theme': 'Social (Disgust)', 'count': 35},
+                {'theme': 'Fitness (Fear)', 'count': 28}
+            ]
+        }
+    })
+
 
 @bp.route('/clusters/<user_id>')
 @login_required

@@ -160,7 +160,10 @@ def reverse_geocode(lat: float, lon: float) -> Optional[Dict[str, Any]]:
     with _nominatim_lock:
         cache_key = (round(lat, _CACHE_PRECISION), round(lon, _CACHE_PRECISION))
         if cache_key in _geocode_cache:
-            return _geocode_cache[cache_key]
+            # Move item to end to implement LRU
+            value = _geocode_cache.pop(cache_key)
+            _geocode_cache[cache_key] = value
+            return value
 
         # Rate limit — inline to avoid extra function overhead inside lock
         elapsed = time.time() - _last_request_time

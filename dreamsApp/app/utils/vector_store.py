@@ -1,6 +1,7 @@
 """Vector store utilities for managing Multiplex Graph embeddings."""
 
 import os
+import hashlib
 import logging
 from typing import List, Dict, Any, Optional
 
@@ -80,7 +81,10 @@ class VectorStore:
             return False
             
         try:
-            ids = [f"{post_id}_{i}" for i in range(len(keywords_data))]
+            ids = [
+                f"{post_id}_{hashlib.sha256(k['keyword'].lower().strip().encode()).hexdigest()[:12]}"
+                for k in keywords_data
+            ]
             embeddings = [k["embedding"] for k in keywords_data]
             metadatas = [{"user_id": user_id, "post_id": post_id, "keyword": k["keyword"]} for k in keywords_data]
             

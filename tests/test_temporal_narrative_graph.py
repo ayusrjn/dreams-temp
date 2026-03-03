@@ -307,6 +307,34 @@ class TestNarrativeEdge:
         )
         assert edge.source_index == 0
         assert edge.target_index == 1
+        assert edge.weight == 1.0  # default
+    
+    def test_valid_edge_with_weight(self):
+        edge = NarrativeEdge(
+            source_index=0,
+            target_index=1,
+            relation=ProximityRelation.ADJACENT,
+            weight=0.5,
+        )
+        assert edge.weight == 0.5
+
+    def test_weight_out_of_range_raises(self):
+        with pytest.raises(ValueError, match="weight must be between"):
+            NarrativeEdge(
+                source_index=0,
+                target_index=1,
+                relation=ProximityRelation.ADJACENT,
+                weight=1.5,
+            )
+
+    def test_negative_weight_raises(self):
+        with pytest.raises(ValueError, match="weight must be between"):
+            NarrativeEdge(
+                source_index=0,
+                target_index=1,
+                relation=ProximityRelation.ADJACENT,
+                weight=-0.1,
+            )
     
     def test_invalid_ordering_raises(self):
         with pytest.raises(ValueError, match="source_index must be less than target_index"):
@@ -462,3 +490,92 @@ class TestTemporalNarrativeGraph:
         
         assert len(overlapping) >= 1
         assert all(e.relation == ProximityRelation.OVERLAPPING for e in overlapping)
+
+    def test_overlapping_edge_weight_is_one(self, base_time: datetime):
+        """Overlapping episodes should produce weight=1.0."""
+        ep1 = Episode(
+            start_time=base_time,
+            end_time=base_time + timedelta(hours=2),
+            events=()
+        )
+        ep2 = Episode(
+            start_time=base_time + timedelta(hours=1),
+            end_time=base_time + timedelta(hours=3),
+            events=()
+        )
+        graph = build_narrative_graph([ep1, ep2], adjacency_threshold=timedelta(hours=6))
+        assert graph.edges[0].weight == 1.0
+
+    def test_adjacent_touching_weight_is_one(self, base_time: datetime):
+        """Adjacent episodes with zero gap should produce weight=1.0."""
+        ep1 = Episode(
+            start_time=base_time,
+            end_time=base_time + timedelta(hours=1),
+            events=()
+        )
+        ep2 = Episode(
+            start_time=base_time + timedelta(hours=1),
+            end_time=base_time + timedelta(hours=2),
+            events=()
+        )
+        graph = build_narrative_graph([ep1, ep2], adjacency_threshold=timedelta(hours=6))
+        assert graph.edges[0].weight == 1.0
+
+    def test_adjacent_weight_decreases_with_gap(self, base_time: datetime):
+        """Larger gaps within the threshold should produce lower weights."""
+        ep1 = Episode(
+            start_time=base_time,
+            end_time=base_time + timedelta(hours=1),
+            events=()
+        )
+        ep_close = Episode(
+            start_time=base_time + timedelta(hours=2),
+            end_time=base_time + timedelta(hours=3),
+            events=()
+        )
+        ep_far = Episode(
+            start_time=base_time + timedelta(hours=5),
+            end_time=base_time + timedelta(hours=6),
+            events=()
+        )
+        threshold = timedelta(hours=6)
+        graph = build_narrative_graph([ep1, ep_close, ep_far], adjacency_threshold=threshold)
+
+        # ep1→ep_close has 1h gap (weight ≈ 0.833)
+        # ep1→ep_far has 4h gap (weight ≈ 0.333)
+        w_close = None
+        w_far = None
+        for edge in graph.edges:
+            if edge.source_index == 0 and edge.target_index == 1:
+                w_close = edge.weight
+            if edge.source_index == 0 and edge.target_index == 2:
+                w_far = edge.weight
+
+        assert w_close is not None and w_far is not None
+        assert w_close > w_far
+        assert 0.0 < w_far < w_close <= 1.0
+
+    def test_disjoint_edge_weight_is_zero(self, base_time: datetime):
+        """Disjoint edges (when included) should have weight 0.0."""
+        ep1 = Episode(
+            start_time=base_time,
+            end_time=base_time + timedelta(hours=1),
+            events=()
+        )
+        ep2 = Episode(
+            start_time=base_time + timedelta(hours=10),
+            end_time=base_time + timedelta(hours=11),
+            events=()
+        )
+        graph = build_narrative_graph([ep1, ep2], include_disjoint_edges=True)
+        assert graph.edges[0].weight == 0.0
+
+    def test_weight_in_to_dict(self):
+        edge = NarrativeEdge(
+            source_index=0,
+            target_index=1,
+            relation=ProximityRelation.ADJACENT,
+            weight=0.75,
+        )
+        d = edge.to_dict()
+        assert d['weight'] == 0.75

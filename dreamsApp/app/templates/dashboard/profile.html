@@ -77,9 +77,70 @@
     .bg-danger {
         background-color: #c62828 !important;
     }
+
+    .narrative-link-section {
+        padding: 2rem 0 0;
+    }
+
+    .narrative-link-card {
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        border-radius: 1rem;
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .narrative-link-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1.5rem rgba(144, 202, 249, 0.15);
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .narrative-link-card .nlc-icon {
+        font-size: 2rem;
+        color: #90caf9;
+        margin-right: 1.2rem;
+    }
+
+    .narrative-link-card .nlc-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #fff;
+    }
+
+    .narrative-link-card .nlc-desc {
+        font-size: 0.88rem;
+        color: #aaa;
+        margin-top: 2px;
+    }
+
+    .narrative-link-card .nlc-arrow {
+        font-size: 1.3rem;
+        color: #90caf9;
+    }
 </style>
 
 <div class="container">
+
+    <!-- Narrative Structure Analysis Link -->
+    <section class="narrative-link-section">
+        <a href="{{ url_for('dashboard.narrative', target=user_id) }}" class="narrative-link-card">
+            <div class="d-flex align-items-center">
+                <div class="nlc-icon"><i class="fa-solid fa-diagram-project"></i></div>
+                <div>
+                    <div class="nlc-title">Narrative Structure Analysis</div>
+                    <div class="nlc-desc">Interactive graph showing emotional episode connections, centrality, and transition patterns</div>
+                </div>
+            </div>
+            <div class="nlc-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        </a>
+    </section>
 
     <!-- Sentiment Trend -->
     <section class="section text-center">

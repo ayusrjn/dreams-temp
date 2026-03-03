@@ -1,6 +1,7 @@
 """Location proximity analysis module for geographic calculations and clustering."""
 
 import math
+from collections import deque
 from typing import List, Dict, Optional, TypedDict
 
 
@@ -146,9 +147,9 @@ def cluster_locations(locations: List[Location], proximity_threshold: float) -> 
         visited.add(i)
         
         # Breadth-first search to find all connected locations
-        queue = [i]
+        queue = deque([i])
         while queue:
-            curr_idx = queue.pop(0)
+            curr_idx = queue.popleft()
             for j in range(len(locations)):
                 if j not in visited:
                     try:

@@ -118,11 +118,10 @@ def upload_post():
 
     if keywords_with_vectors:
         # Strip out the heavy 384-dimensional vector arrays before saving to MongoDB
-        keywords_for_mongo = []
-        for kw in keywords_with_vectors:
-            kw_copy = dict(kw)
-            kw_copy.pop("embedding", None)
-            keywords_for_mongo.append(kw_copy)
+        keywords_for_mongo = [
+            {k: v for k, v in kw.items() if k != "embedding"}
+            for kw in keywords_with_vectors
+        ]
 
         mongo = current_app.mongo
         kw_update_result = mongo['keywords'].update_one(

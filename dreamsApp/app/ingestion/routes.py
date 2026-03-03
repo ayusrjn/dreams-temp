@@ -35,16 +35,16 @@ def _enrich_location_background(post_id, lat, lon, mongo_uri, db_name):
     """
     try:
         from pymongo import MongoClient
-        client = MongoClient(mongo_uri)
-        db = client[db_name]
+        with MongoClient(mongo_uri) as client:
+            db = client[db_name]
 
-        enrichment = enrich_location(lat, lon, model=model)
-        if enrichment:
-            db["posts"].update_one(
-                {"_id": post_id},
-                {"$set": {f"location.{k}": v for k, v in enrichment.items()}},
-            )
-            logger.info("Location enrichment complete for post %s", post_id)
+            enrichment = enrich_location(lat, lon, model=model)
+            if enrichment:
+                db["posts"].update_one(
+                    {"_id": post_id},
+                    {"$set": {f"location.{k}": v for k, v in enrichment.items()}},
+                )
+                logger.info("Location enrichment complete for post %s", post_id)
     except Exception:
         logger.exception("Background location enrichment failed for post %s", post_id)
 

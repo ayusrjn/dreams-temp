@@ -36,24 +36,16 @@ def _enrich_location_background(post_id, lat, lon, mongo_uri, db_name):
     """
     try:
         from pymongo import MongoClient
-        client = MongoClient(mongo_uri)
-        db = client[db_name]
+        with MongoClient(mongo_uri) as client:
+            db = client[db_name]
 
-        enrichment = enrich_location(lat, lon, model=model)
-        if enrichment:
-            db["posts"].update_one(
-                {"_id": post_id},
-                {"$set": {f"location.{k}": v for k, v in enrichment.items()}},
-            )
-            # Push semantic location embedding to ChromaDB Multiplex Layer 2
-            if "location_embedding" in enrichment:
-                vector_store.store_vector(
-                    collection_name="layer_2_semantic",
-                    doc_id=str(post_id),
-                    embedding=enrichment["location_embedding"],
-                    metadata={"location_text": enrichment.get("location_text", "")}
+            enrichment = enrich_location(lat, lon, model=model)
+            if enrichment:
+                db["posts"].update_one(
+                    {"_id": post_id},
+                    {"$set": {f"location.{k}": v for k, v in enrichment.items()}},
                 )
-            logger.info("Location enrichment complete for post %s", post_id)
+                logger.info("Location enrichment complete for post %s", post_id)
     except Exception:
         logger.exception("Background location enrichment failed for post %s", post_id)
 

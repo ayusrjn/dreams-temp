@@ -152,10 +152,19 @@ def upload_post():
             db_name,
         )
 
+def _store_keywords_background(user_id, post_id, keywords_with_vectors):
+    """Push keywords to ChromaDB in background thread with error handling."""
+    try:
+        vector_store.store_keywords(user_id, post_id, keywords_with_vectors)
+        logger.info("Keywords stored in ChromaDB for post %s", post_id)
+    except Exception:
+        logger.exception("Background keyword storage failed for post %s", post_id)
+
+
     # Fire-and-forget: push extracted keywords into ChromaDB
     if keywords_with_vectors:
         _enrichment_executor.submit(
-            vector_store.store_keywords,
+            _store_keywords_background,
             user_id,
             str(insert_result.inserted_id),
             keywords_with_vectors

@@ -15,6 +15,7 @@ from ..utils.sentiment import (
     get_image_caption_and_sentiment,
     select_text_for_analysis,
 )
+from ..utils.vector_store import vector_store
 
 from sentence_transformers import SentenceTransformer
 
@@ -40,13 +41,39 @@ def _enrich_location_background(post_id, lat, lon, mongo_uri, db_name):
 
             enrichment = enrich_location(lat, lon, model=model)
             if enrichment:
+                # Strip the heavy semantic embedding before updating MongoDB
+                mongo_enrichment = dict(enrichment)
+                mongo_enrichment.pop("location_embedding", None)
+                
                 db["posts"].update_one(
                     {"_id": post_id},
-                    {"$set": {f"location.{k}": v for k, v in enrichment.items()}},
+                    {"$set": {f"location.{k}": v for k, v in mongo_enrichment.items()}},
                 )
+                
+                # Push semantic location embedding to ChromaDB Multiplex Layer 2
+                if "location_embedding" in enrichment:
+                    vector_store.store_vector(
+                        collection_name="layer_2_semantic",
+                        doc_id=str(post_id),
+                        embedding=enrichment["location_embedding"],
+                        metadata={"location_text": enrichment.get("location_text", "")}
+                    )
+                
                 logger.info("Location enrichment complete for post %s", post_id)
     except Exception:
         logger.exception("Background location enrichment failed for post %s", post_id)
+
+
+def _store_keywords_background(user_id, post_id, keywords_with_vectors):
+    """Push keywords to ChromaDB in background thread with error handling."""
+    try:
+        result = vector_store.store_keywords(user_id, post_id, keywords_with_vectors)
+        if result:
+            logger.info("Keywords stored in ChromaDB for post %s", post_id)
+        else:
+            logger.error("Failed to store keywords in ChromaDB for post %s (store_keywords returned False)", post_id)
+    except Exception:
+        logger.exception("Background keyword storage failed for post %s", post_id)
 
 
 @bp.route('/upload', methods=['POST'])
@@ -90,10 +117,16 @@ def upload_post():
         keyword_type = None
 
     if keywords_with_vectors:
+        # Strip out the heavy 384-dimensional vector arrays before saving to MongoDB
+        keywords_for_mongo = [
+            {k: v for k, v in kw.items() if k != "embedding"}
+            for kw in keywords_with_vectors
+        ]
+
         mongo = current_app.mongo
         kw_update_result = mongo['keywords'].update_one(
             {'user_id': user_id},
-            {'$push': {keyword_type: {'$each': keywords_with_vectors}}},
+            {'$push': {keyword_type: {'$each': keywords_for_mongo}}},
             upsert=True
         )
 
@@ -108,6 +141,9 @@ def upload_post():
                     {'_id': kw_update_result.upserted_id},
                     {'$set': {'negative_keywords': []}}
                 )
+                
+    # We will defer pushing keywords to ChromaDB until we have the post_id
+
 
     post_doc = {
         'user_id': user_id,
@@ -138,6 +174,15 @@ def upload_post():
             gps_data["lon"],
             mongo_uri,
             db_name,
+        )
+
+    # Fire-and-forget: push extracted keywords into ChromaDB
+    if keywords_with_vectors:
+        _enrichment_executor.submit(
+            _store_keywords_background,
+            user_id,
+            str(insert_result.inserted_id),
+            keywords_with_vectors
         )
 
     return jsonify({

@@ -107,7 +107,7 @@ class SentimentAnalyzer:
                             "No Flask context detected. Using default HuggingFace model."
                         )
 
-                except Exception:
+                except RuntimeError:
                     # pytest will land here
                     logging.info(
                         "Running outside Flask. Using default HuggingFace model."

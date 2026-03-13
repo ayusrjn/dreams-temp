@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
@@ -87,8 +88,9 @@ def upload_post():
         return jsonify({'error': 'Missing required fields'}), 400
     
     filename = secure_filename(image.filename)
+    unique_filename = f"{uuid.uuid4().hex}_{filename}"
     upload_path = current_app.config['UPLOAD_FOLDER']
-    image_path = os.path.join(upload_path, filename)
+    image_path = os.path.join(upload_path, unique_filename)
     image.save(image_path)
 
     # Extract GPS from EXIF if available

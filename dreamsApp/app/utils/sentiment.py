@@ -230,5 +230,4 @@ def analyze_sentiment():
     text_to_analyze = select_text_for_analysis(caption, result["imgcaption"])
     result["aspect_sentiment"] = get_aspect_sentiment(text_to_analyze)
     result["chime_analysis"] = get_chime_category(text_to_analyze)
-
     return jsonify(result), 200

@@ -2,7 +2,6 @@ from flask import Flask
 from pymongo import MongoClient
 import os
 from flask_login import LoginManager
-from tests.test_sentiment import app
 from .models import User  
 from bson.objectid import ObjectId 
 

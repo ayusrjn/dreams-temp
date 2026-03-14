@@ -2,6 +2,7 @@ from flask import Flask
 from pymongo import MongoClient
 import os
 from flask_login import LoginManager
+from tests.test_sentiment import app
 from .models import User  
 from bson.objectid import ObjectId 
 
@@ -58,5 +59,8 @@ def create_app(test_config=None):
 
     from .analytics import bp as analytics_bp
     app.register_blueprint(analytics_bp)
+
+    from .utils.sentiment import bp as sentiment_bp
+    app.register_blueprint(sentiment_bp)
 
     return app

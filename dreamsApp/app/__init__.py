@@ -61,5 +61,4 @@ def create_app(test_config=None):
 
     from .utils.sentiment import bp as sentiment_bp
     app.register_blueprint(sentiment_bp)
-
     return app

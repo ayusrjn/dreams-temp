@@ -86,8 +86,9 @@ def upload_post():
     timestamp = request.form.get('timestamp', datetime.now().isoformat())
     image = request.files.get('image')
 
-    if not all([caption, timestamp, image]):
-        return jsonify({'error': 'Missing required fields'}), 400
+    missing = [k for k, v in {'caption': caption, 'image': image}.items() if not v]
+    if missing:
+         return jsonify({'error': f"Missing required fields: {', '.join(missing)}"}), 400
     
     filename = secure_filename(image.filename)
     unique_filename = f"{uuid.uuid4().hex}_{filename}"

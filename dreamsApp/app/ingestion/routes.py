@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from flask import current_app, jsonify, request
+from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
 from . import bp
@@ -78,13 +79,14 @@ def _store_keywords_background(user_id, post_id, keywords_with_vectors):
 
 
 @bp.route('/upload', methods=['POST'])
+@login_required
 def upload_post():
-    user_id = request.form.get('user_id')
+    user_id = current_user.id
     caption = request.form.get('caption')
     timestamp = request.form.get('timestamp', datetime.now().isoformat())
     image = request.files.get('image')
 
-    if not all([user_id, caption, timestamp, image]):
+    if not all([caption, timestamp, image]):
         return jsonify({'error': 'Missing required fields'}), 400
     
     filename = secure_filename(image.filename)

@@ -81,12 +81,12 @@ def _store_keywords_background(user_id, post_id, keywords_with_vectors):
 @bp.route('/upload', methods=['POST'])
 @login_required
 def upload_post():
-    user_id = current_user.id
+    user_id = request.form.get('user_id')
     caption = request.form.get('caption')
     timestamp = request.form.get('timestamp', datetime.now().isoformat())
     image = request.files.get('image')
 
-    missing = [k for k, v in {'caption': caption, 'image': image}.items() if not v]
+    missing = [k for k, v in {'caption': caption, 'image': image,'user_id': user_id}.items() if not v]
     if missing:
          return jsonify({'error': f"Missing required fields: {', '.join(missing)}"}), 400
     

@@ -33,7 +33,6 @@ datasets>=2.19.0
 sentence-transformers>=2.6.0
 spacy>=3.7.0
 hdbscan
-google-generativeai
 google-genai
 chromadb
 setfit>=1.0.3

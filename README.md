@@ -73,6 +73,10 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```bash
 pip install -r requirements.txt
 ```
+#### For CPU-only installations
+```bash
+pip install -r requirements-cpu.txt
+```
 
 ### Run tests to verify everything is working
 ```bash

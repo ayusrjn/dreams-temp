@@ -34,7 +34,7 @@ class DreamsPipeline:
         Returns a dictionary of structured data ready for database insertion.
         """
         if timestamp_iso is None:
-            timestamp_iso = datetime.now().isoformat()
+            timestamp_iso = datetime.now(datetime.timezone.utc).isoformat()
             
         gps_data = extract_gps_from_image(image_path)
         

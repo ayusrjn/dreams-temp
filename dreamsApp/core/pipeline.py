@@ -2,10 +2,10 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 
-from dreamsApp.app.builder import build_emotion_timeline
-from dreamsApp.analytics.episode_segmentation import segment_timeline_to_episodes
-from dreamsApp.analytics.temporal_narrative_graph import build_narrative_graph
-from dreamsApp.analytics.graph_analysis import analyze_narrative_graph
+from dreamsApp.core.graph.builder import build_emotion_timeline
+from dreamsApp.core.graph.episode_segmentation import segment_timeline_to_episodes
+from dreamsApp.core.graph.temporal_narrative_graph import build_narrative_graph
+from dreamsApp.core.graph.graph_analysis import analyze_narrative_graph
 
 from dreamsApp.core.keywords import extract_keywords_and_vectors
 from dreamsApp.core.location_extractor import extract_gps_from_image

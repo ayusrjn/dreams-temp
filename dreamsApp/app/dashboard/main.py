@@ -262,7 +262,7 @@ def thematic_refresh(user_id):
     
         try:
             thematic_data = generate(str(user_id), positive_keywords, negative_keywords, current_app.mongo['thematic_analysis'])
-            print("Refresed thematic data:")
+            current_app.logger.info("Refresed thematic data:")
             
             return jsonify({
                 'message': 'Thematics refreshed successfully',

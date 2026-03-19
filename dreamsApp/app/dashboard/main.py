@@ -188,7 +188,7 @@ def profile(target):
         try:
             thematics = generate(str(target_user_id), positive_keywords, negative_keywords, current_app.mongo['thematic_analysis'])
         except Exception as e:
-            print(f"Error generating thematics: {e}")
+            current_app.logger.error(f"Error generating thematics: {e}")
             thematics = {}
     else:
         thematics = thematics_data["data"]

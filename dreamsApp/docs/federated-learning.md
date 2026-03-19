@@ -134,7 +134,7 @@ dreamsApp/
 │   ├── models/
 │   │   └── production_chime_model/  # Updated model (created after first training)
 │   ├── core/
-│   │   ├── fl_aggregator.py            # Production logging setup
+│   │   ├── logger.py            # Production logging setup
 │   │   └── sentiment.py         # Model loading with local-first logic
 │   └── fl_worker.py             # Core training logic
 ├── docs/

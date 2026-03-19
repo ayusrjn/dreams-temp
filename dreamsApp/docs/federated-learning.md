@@ -133,8 +133,8 @@ dreamsApp/
 │   │   └── main.py              # /correct_chime endpoint with FL trigger
 │   ├── models/
 │   │   └── production_chime_model/  # Updated model (created after first training)
-│   ├── utils/
-│   │   ├── logger.py            # Production logging setup
+│   ├── core/
+│   │   ├── fl_aggregator.py            # Production logging setup
 │   │   └── sentiment.py         # Model loading with local-first logic
 │   └── fl_worker.py             # Core training logic
 ├── docs/

@@ -4,7 +4,7 @@ import os
 import datetime
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, AutoConfig
 from dreamsApp.app import create_app
-from dreamsApp.app.utils.logger import setup_logger
+from dreamsApp.core.logger import setup_logger
 
 # Setup Logger
 logger = setup_logger('fl_worker')

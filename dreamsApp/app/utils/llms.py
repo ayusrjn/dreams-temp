@@ -79,6 +79,6 @@ Your task:
         return data
 
     except json.JSONDecodeError:
-        return {"error": "Invalid JSON from Gemini", "raw": full_response}
+        raise ValueError(f"Invalid JSON from Gemini: {full_response}")
     except Exception as e:
-        return {"error": "Unexpected error", "details": str(e)}
+        raise RuntimeError(f"Unexpected error during thematic generation: {str(e)}")

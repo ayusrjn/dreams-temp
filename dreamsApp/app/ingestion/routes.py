@@ -9,7 +9,6 @@ from flask_login import login_required
 from werkzeug.utils import secure_filename
 
 from . import bp
-from dreamsApp.core.pipeline import DreamsPipeline
 from ..utils.clustering import cluster_keywords_for_all_users
 from dreamsApp.core.location_extractor import enrich_location
 from ..utils.vector_store import vector_store
@@ -91,8 +90,8 @@ def upload_post():
     image_path = os.path.join(upload_path, unique_filename)
     image.save(image_path)
 
-    # Delegate the heavy AI extraction sequence to the pipeline
-    pipeline = DreamsPipeline()
+    # Delegate the heavy AI extraction sequence to the global pipeline
+    pipeline = current_app.dreams_pipeline
     pipeline_result = pipeline.process_new_post(user_id, image_path, caption, timestamp)
     
     post_doc = pipeline_result["post_doc"]

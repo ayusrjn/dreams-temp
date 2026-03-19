@@ -1,6 +1,11 @@
 import logging
-from datetime import datetime
-from typing import Dict, Any
+from datetime import datetime, timedelta
+from typing import Dict, Any, List
+
+from dreamsApp.app.builder import build_emotion_timeline
+from dreamsApp.analytics.episode_segmentation import segment_timeline_to_episodes
+from dreamsApp.analytics.temporal_narrative_graph import build_narrative_graph
+from dreamsApp.analytics.graph_analysis import analyze_narrative_graph
 
 from dreamsApp.core.keywords import extract_keywords_and_vectors
 from dreamsApp.core.location_extractor import extract_gps_from_image
@@ -70,3 +75,41 @@ class DreamsPipeline:
             "keywords_for_db": keywords_for_mongo,
             "keywords_with_vectors": keywords_with_vectors
         }
+
+    def generate_narrative_metrics(self, user_id: str, user_posts: List[Dict], gap_threshold_hours: int = 24, adjacency_threshold_days: int = 7) -> Dict[str, Any]:
+        """
+        Executes the temporal graph building sequence and calculates structural narrative metrics.
+        Returns a dictionary containing the graph analytics results.
+        """
+        gap_threshold = timedelta(hours=gap_threshold_hours)
+        adjacency_threshold = timedelta(days=adjacency_threshold_days)
+
+        records = []
+        for post in user_posts:
+            ts = post['timestamp']
+            if not isinstance(ts, datetime):
+                ts = datetime.fromisoformat(str(ts))
+
+            sentiment = post.get('sentiment', {})
+            records.append({
+                'timestamp': ts,
+                'emotion_label': sentiment.get('label', 'neutral'),
+                'score': sentiment.get('score'),
+                'source_id': str(post.get('_id', '')),
+            })
+
+        timeline = build_emotion_timeline(
+            subject_id=user_id,
+            records=records,
+        )
+        episodes = segment_timeline_to_episodes(
+            timeline,
+            gap_threshold=gap_threshold,
+        )
+        narrative_graph = build_narrative_graph(
+            episodes,
+            adjacency_threshold=adjacency_threshold,
+        )
+        metrics = analyze_narrative_graph(narrative_graph)
+        
+        return metrics

@@ -9,14 +9,9 @@ from flask_login import login_required
 from werkzeug.utils import secure_filename
 
 from . import bp
-from ..utils.keywords import extract_keywords_and_vectors
+from dreamsApp.core.pipeline import DreamsPipeline
 from ..utils.clustering import cluster_keywords_for_all_users
 from ..utils.location_extractor import extract_gps_from_image, enrich_location
-from ..utils.sentiment import (
-    get_chime_category,
-    get_image_caption_and_sentiment,
-    select_text_for_analysis,
-)
 from ..utils.vector_store import vector_store
 
 from sentence_transformers import SentenceTransformer
@@ -96,39 +91,18 @@ def upload_post():
     image_path = os.path.join(upload_path, unique_filename)
     image.save(image_path)
 
-    # Extract GPS from EXIF if available
-    gps_data = extract_gps_from_image(image_path)
+    # Delegate the heavy AI extraction sequence to the pipeline
+    pipeline = DreamsPipeline()
+    pipeline_result = pipeline.process_new_post(user_id, image_path, caption, timestamp)
     
-    analysis_result = get_image_caption_and_sentiment(image_path, caption)
-    
-    sentiment = analysis_result["sentiment"]
-    generated_caption = analysis_result["imgcaption"]
+    post_doc = pipeline_result["post_doc"]
+    keyword_type = pipeline_result["keyword_type"]
+    keywords_for_mongo = pipeline_result["keywords_for_db"]
+    keywords_with_vectors = pipeline_result["keywords_with_vectors"] # Needed for ChromaDB
+    gps_data = pipeline_result["gps_data"] # Needed for background enrichment
 
-    # Refactor: Use shared selection logic to determine which text to analyze for recovery
-    text_for_analysis = select_text_for_analysis(caption, generated_caption)
-    chime_result = get_chime_category(text_for_analysis)
-    
-    # keyword generation from the caption
-    
-    # Extract keyword + vector pairs
-    if sentiment['label'] == 'negative':
-        keywords_with_vectors = extract_keywords_and_vectors(generated_caption)
-        keyword_type = 'negative_keywords'
-    elif sentiment['label'] == 'positive':
-        keywords_with_vectors = extract_keywords_and_vectors(generated_caption)
-        keyword_type = 'positive_keywords'
-    else:
-        keywords_with_vectors = []
-        keyword_type = None
-
-    if keywords_with_vectors:
-        # Strip out the heavy 384-dimensional vector arrays before saving to MongoDB
-        keywords_for_mongo = [
-            {k: v for k, v in kw.items() if k != "embedding"}
-            for kw in keywords_with_vectors
-        ]
-
-        mongo = current_app.mongo
+    mongo = current_app.mongo
+    if keywords_for_mongo and keyword_type:
         kw_update_result = mongo['keywords'].update_one(
             {'user_id': user_id},
             {'$push': {keyword_type: {'$each': keywords_for_mongo}}},
@@ -148,18 +122,6 @@ def upload_post():
                 )
                 
     # We will defer pushing keywords to ChromaDB until we have the post_id
-
-
-    post_doc = {
-        'user_id': user_id,
-        'caption': caption,
-        'timestamp': datetime.fromisoformat(timestamp),
-        'image_path': image_path,
-        'generated_caption': generated_caption,
-        'sentiment' : sentiment,
-        'chime_analysis': chime_result,
-        'location': gps_data,
-    }
 
     mongo = current_app.mongo
     insert_result = mongo['posts'].insert_one(post_doc)
@@ -195,10 +157,10 @@ def upload_post():
         'post_id': str(insert_result.inserted_id),
         'user_id': user_id,
         'caption': caption,
-        'timestamp': datetime.fromisoformat(timestamp),
+        'timestamp': post_doc['timestamp'].isoformat(),
         'image_path': image_path,
-        'sentiment': sentiment,
-        'generated_caption': generated_caption,
+        'sentiment': post_doc['sentiment'],
+        'generated_caption': post_doc['generated_caption'],
     }), 201
 
     

@@ -40,15 +40,11 @@ class DreamsPipeline:
         text_for_analysis = select_text_for_analysis(caption, generated_caption)
         chime_result = get_chime_category(text_for_analysis)
         
-        if sentiment['label'] == 'negative':
+        keywords_with_vectors = []
+        keyword_type = None
+        if sentiment['label'] in ('positive', 'negative'):
             keywords_with_vectors = extract_keywords_and_vectors(generated_caption)
-            keyword_type = 'negative_keywords'
-        elif sentiment['label'] == 'positive':
-            keywords_with_vectors = extract_keywords_and_vectors(generated_caption)
-            keyword_type = 'positive_keywords'
-        else:
-            keywords_with_vectors = []
-            keyword_type = None
+            keyword_type = f"{sentiment['label']}_keywords"
 
         keywords_for_mongo = []
         if keywords_with_vectors:

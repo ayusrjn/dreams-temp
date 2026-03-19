@@ -2,9 +2,9 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 
-from dreamsApp.app.utils.keywords import extract_keywords_and_vectors
-from dreamsApp.app.utils.location_extractor import extract_gps_from_image
-from dreamsApp.app.utils.sentiment import (
+from dreamsApp.core.keywords import extract_keywords_and_vectors
+from dreamsApp.core.location_extractor import extract_gps_from_image
+from dreamsApp.core.sentiment import (
     get_chime_category,
     get_image_caption_and_sentiment,
     select_text_for_analysis,

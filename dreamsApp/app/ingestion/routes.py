@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 from . import bp
 from dreamsApp.core.pipeline import DreamsPipeline
 from ..utils.clustering import cluster_keywords_for_all_users
-from ..utils.location_extractor import extract_gps_from_image, enrich_location
+from dreamsApp.core.location_extractor import enrich_location
 from ..utils.vector_store import vector_store
 
 from sentence_transformers import SentenceTransformer

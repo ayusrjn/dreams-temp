@@ -7,7 +7,6 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer, Auto
 import numpy as np
 from scipy.special import softmax
 import requests
-from flask import Blueprint, request, jsonify
 from transformers import pipeline
 
 HF_MODEL_ID = "ashh007/dreams-chime-bert"
@@ -202,33 +201,3 @@ def get_image_caption_and_sentiment(image_path_or_url: str, caption: str, prompt
     return analyzer.get_image_caption_and_sentiment(image_path_or_url, caption, prompt)
 
 
-bp = Blueprint("sentiment", __name__, url_prefix="/sentiment")
-
-
-@bp.route("/analyze", methods=["POST"])
-def analyze_sentiment():
-    """
-    Expects JSON body with:
-      - image_path_or_url (str)
-      - caption (str)
-    Returns:
-      - JSON with image caption and sentiment
-    """
-    data = request.get_json() or {}
-
-    image_path_or_url = data.get("image_path_or_url")
-    caption = data.get("caption", "")
-
-    if not image_path_or_url:
-        return jsonify({"error": "image_path_or_url is required"}), 400
-
-    result = get_image_caption_and_sentiment(
-        image_path_or_url=image_path_or_url,
-        caption=caption,
-    )
-    # Refactor: Use shared selection logic
-    text_to_analyze = select_text_for_analysis(caption, result["imgcaption"])
-    result["aspect_sentiment"] = get_aspect_sentiment(text_to_analyze)
-    result["chime_analysis"] = get_chime_category(text_to_analyze)
-
-    return jsonify(result), 200

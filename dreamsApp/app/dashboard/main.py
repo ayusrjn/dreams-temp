@@ -185,7 +185,7 @@ def profile(target):
     thematics_data = current_app.mongo['thematic_analysis'].find_one({'user_id': str(target_user_id)})
     
     if not thematics_data or "data" not in thematics_data:
-        thematics = generate(str(target_user_id), positive_keywords, negative_keywords)
+        thematics = generate(str(target_user_id), positive_keywords, negative_keywords, current_app.mongo['thematic_analysis'])
     else:
         thematics = thematics_data["data"]
 
@@ -256,7 +256,7 @@ def thematic_refresh(user_id):
 
         negative_keywords = [item['keyword'] for item in keywords_data.get('negative_keywords', [])] if keywords_data else []
     
-        thematic_data = generate(str(user_id), positive_keywords, negative_keywords)
+        thematic_data = generate(str(user_id), positive_keywords, negative_keywords, current_app.mongo['thematic_analysis'])
         print("Refresed thematic data:")
         
         return jsonify({

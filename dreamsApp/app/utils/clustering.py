@@ -1,4 +1,3 @@
-from flask import current_app
 import numpy as np
 import hdbscan
 
@@ -18,10 +17,7 @@ def get_vectors_and_metadata(doc):
 
     return np.array(vectors), metadata
 
-def cluster_keywords_for_all_users():
-    mongo = current_app.mongo
-    keywords_collection = mongo['keywords']
-
+def cluster_keywords_for_all_users(keywords_collection):
     all_users = keywords_collection.find({})
 
     for doc in all_users:

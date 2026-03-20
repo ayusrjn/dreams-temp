@@ -63,7 +63,7 @@ class DreamsPipeline:
         post_doc = {
             'user_id': user_id,
             'caption': caption,
-            'timestamp': datetime.fromisoformat(timestamp_iso),
+            'timestamp': timestamp_dt,
             'image_path': image_path,
             'generated_caption': generated_caption,
             'sentiment': sentiment,

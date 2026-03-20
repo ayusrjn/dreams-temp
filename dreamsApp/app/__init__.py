@@ -2,6 +2,7 @@ from flask import Flask
 from pymongo import MongoClient
 import os
 from flask_login import LoginManager
+from dreamsApp.core.pipeline import DreamsPipeline
 from .models import User  
 from bson.objectid import ObjectId 
 
@@ -32,6 +33,9 @@ def create_app(test_config=None):
     client = MongoClient(app.config["MONGO_URI"])
     app.mongo = client[app.config["MONGO_DB_NAME"]]
 
+    # Globally attach our core AI pipeline so we don't boot models per request
+    app.dreams_pipeline = DreamsPipeline()
+
     
     login_manager = LoginManager()
     login_manager.init_app(app)
@@ -59,6 +63,4 @@ def create_app(test_config=None):
     from .analytics import bp as analytics_bp
     app.register_blueprint(analytics_bp)
 
-    from .utils.sentiment import bp as sentiment_bp
-    app.register_blueprint(sentiment_bp)
     return app

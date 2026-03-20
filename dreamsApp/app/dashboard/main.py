@@ -11,7 +11,7 @@ import base64
 import threading
 from flask_login import login_required, current_user
 from wordcloud import WordCloud
-from ..utils.llms import generate
+from dreamsApp.core.llms import generate
 from flask import jsonify
 import datetime
 from bson.objectid import ObjectId
@@ -185,7 +185,11 @@ def profile(target):
     thematics_data = current_app.mongo['thematic_analysis'].find_one({'user_id': str(target_user_id)})
     
     if not thematics_data or "data" not in thematics_data:
-        thematics = generate(str(target_user_id), positive_keywords, negative_keywords)
+        try:
+            thematics = generate(str(target_user_id), positive_keywords, negative_keywords, current_app.mongo['thematic_analysis'])
+        except Exception as e:
+            current_app.logger.error(f"Error generating thematics: {e}")
+            thematics = {}
     else:
         thematics = thematics_data["data"]
 
@@ -256,13 +260,17 @@ def thematic_refresh(user_id):
 
         negative_keywords = [item['keyword'] for item in keywords_data.get('negative_keywords', [])] if keywords_data else []
     
-        thematic_data = generate(str(user_id), positive_keywords, negative_keywords)
-        print("Refresed thematic data:")
-        
-        return jsonify({
-            "success": True,
-            "message": "Thematic updated successfully"
-        })
+        try:
+            thematic_data = generate(str(user_id), positive_keywords, negative_keywords, current_app.mongo['thematic_analysis'])
+            current_app.logger.info("Refresed thematic data:")
+            
+            return jsonify({
+                'message': 'Thematics refreshed successfully',
+                'thematic_data': thematic_data
+            }), 200
+        except Exception as e:
+            current_app.logger.error(f"Error regenerating thematics: {e}")
+            return jsonify({'error': str(e)}), 500
     except Exception as e:
         return jsonify({
             "success": False,

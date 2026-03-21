@@ -63,8 +63,8 @@ def _enrich_location_background(post_id, lat, lon, mongo_uri, db_name):
         logger.exception("Background location enrichment failed for post %s", post_id)
 
 
-def _store_embeddings_background(post_id, user_id, caption_embedding, image_embedding, keywords_with_vectors):
-    """Push document embeddings and optionally keywords to ChromaDB in background thread."""
+def _store_embeddings_background(post_id, user_id, caption_embedding, image_embedding):
+    """Push document embeddings to ChromaDB in background thread."""
     try:
         if caption_embedding:
             vector_store.store_vector(
@@ -82,15 +82,8 @@ def _store_embeddings_background(post_id, user_id, caption_embedding, image_embe
             )
         logger.info("Embeddings stored in ChromaDB for post %s", post_id)
         
-        if keywords_with_vectors:
-            result = vector_store.store_keywords(user_id, str(post_id), keywords_with_vectors)
-            if result:
-                logger.info("Keywords stored in ChromaDB for post %s", post_id)
-            else:
-                logger.error("Failed to store keywords in ChromaDB for post %s", post_id)
-                
     except Exception:
-        logger.exception("Background embeddings/keyword storage failed for post %s", post_id)
+        logger.exception("Background embeddings storage failed for post %s", post_id)
 
 
 @bp.route('/upload', methods=['POST'])
@@ -202,15 +195,14 @@ def upload_post():
             db_name,
         )
 
-    # Fire-and-forget: push document embeddings and keywords into ChromaDB
-    if caption_embedding or image_embedding or keywords_with_vectors:
+    # Fire-and-forget: push document embeddings into ChromaDB
+    if caption_embedding or image_embedding:
         _enrichment_executor.submit(
             _store_embeddings_background,
             str(insert_result.inserted_id),
             user_id,
             caption_embedding,
-            image_embedding,
-            keywords_with_vectors
+            image_embedding
         )
 
     return jsonify({

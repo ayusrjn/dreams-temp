@@ -23,9 +23,11 @@ class ImageCaptioner:
 
     def get_blip_models(self):
         if self._blip_processor is None or self._blip_model is None:
-            logger.info("Loading Blip models...")
-            self._blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
-            self._blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
+            with _blip_model_lock:
+                if self._blip_processor is None or self._blip_model is None:
+                    logger.info("Loading Blip models...")
+                    self._blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
+                    self._blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
         return self._blip_processor, self._blip_model
 
     def get_image_caption(self, image_path_or_url: str):

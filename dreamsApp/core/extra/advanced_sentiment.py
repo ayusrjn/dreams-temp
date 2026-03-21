@@ -98,7 +98,7 @@ class AdvancedSentimentAnalyzer:
                 
             return top_result
         except Exception as e:
-            print(f"Inference error: {e}")
+            logging.error(f"Inference error: {e}")
             return {"label": "Uncategorized", "score": 0.0}
 
     def analyze_aspect_sentiment(self, text: str) -> list:

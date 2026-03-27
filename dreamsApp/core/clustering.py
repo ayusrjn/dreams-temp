@@ -10,16 +10,13 @@ def get_vectors_and_metadata(doc):
 
     for sentiment in ['positive_keywords', 'negative_keywords']:
         for kw in doc.get(sentiment, []):
-            vec = kw.get('embedding')  
-            
-            if vec is not None:
+            vec = kw.get('embedding')  # Correct key here
+            if vec:
                 vectors.append(vec)
-        
-        for kw in doc.get(sentiment, []):
-            metadata.append({
-                'keyword': kw.get('keyword'),
-                'sentiment': sentiment
-            })
+                metadata.append({
+                    'keyword': kw.get('keyword'),
+                    'sentiment': sentiment
+                })
 
     return np.array(vectors), metadata
 

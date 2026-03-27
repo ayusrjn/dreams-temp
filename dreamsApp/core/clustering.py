@@ -10,9 +10,11 @@ def get_vectors_and_metadata(doc):
 
     for sentiment in ['positive_keywords', 'negative_keywords']:
         for kw in doc.get(sentiment, []):
-            vec = kw.get('embedding')  # Correct key here
-            vectors.append(vec)  # Simplified: removed redundant None check
-        # Refactored: consolidate metadata appending outside the loop for cleaner code
+            vec = kw.get('embedding')  
+            
+            if vec is not None:
+                vectors.append(vec)
+        
         for kw in doc.get(sentiment, []):
             metadata.append({
                 'keyword': kw.get('keyword'),

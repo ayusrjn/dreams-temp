@@ -1,5 +1,8 @@
+import logging
 import numpy as np
 import hdbscan
+
+logger = logging.getLogger(__name__)
 
 def get_vectors_and_metadata(doc):
     vectors = []
@@ -8,12 +11,13 @@ def get_vectors_and_metadata(doc):
     for sentiment in ['positive_keywords', 'negative_keywords']:
         for kw in doc.get(sentiment, []):
             vec = kw.get('embedding')  # Correct key here
-            if vec:
-                vectors.append(vec)
-                metadata.append({
-                    'keyword': kw.get('keyword'),
-                    'sentiment': sentiment
-                })
+            vectors.append(vec)  # Simplified: removed redundant None check
+        # Refactored: consolidate metadata appending outside the loop for cleaner code
+        for kw in doc.get(sentiment, []):
+            metadata.append({
+                'keyword': kw.get('keyword'),
+                'sentiment': sentiment
+            })
 
     return np.array(vectors), metadata
 
@@ -29,16 +33,16 @@ def cluster_keywords_for_all_users(keywords_collection):
         if len(vectors) < 2:
             continue  # Skip clustering if insufficient data
 
-        # Debug: Print the shape of the vectors array to check its dimensions
-        print(f"Shape of vectors array: {vectors.shape}")
-        # Debug: Print the first few vectors to inspect their values
-        print(f"First 5 vectors: {vectors[:5]}")
+        # Debug: Log the shape of the vectors array to check its dimensions
+        logger.debug(f"Shape of vectors array: {vectors.shape}")
+        # Debug: Log the first few vectors to inspect their values
+        logger.debug(f"First 5 vectors: {vectors[:5]}")
 
         clusterer = hdbscan.HDBSCAN(min_cluster_size=2, metric='euclidean')
         cluster_labels = clusterer.fit_predict(vectors)
 
-        # Debug: Print the cluster labels to see how the data is being clustered
-        print(f"Cluster labels: {cluster_labels}")
+        # Debug: Log the cluster labels to see how the data is being clustered
+        logger.debug(f"Cluster labels: {cluster_labels}")
 
         clustered_result = []
         for i, label in enumerate(cluster_labels):

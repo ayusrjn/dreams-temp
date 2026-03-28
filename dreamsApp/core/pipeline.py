@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List
 
 from dreamsApp.core.graph.builder import build_emotion_timeline
@@ -34,7 +34,7 @@ class DreamsPipeline:
         Returns a dictionary of structured data ready for database insertion.
         """
         if timestamp_iso is None:
-            timestamp_dt = datetime.now(datetime.timezone.utc)
+            timestamp_dt = datetime.now(timezone.utc)
         else:
             timestamp_dt = datetime.fromisoformat(timestamp_iso)
             

@@ -143,7 +143,7 @@ class DreamsPipeline:
                     timestamp_iso=timestamp_iso
                 )
             except Exception as e:
-                logger.error(f"Pipeline error on row {idx}: {e}")
+                logger.error(f"Pipeline error on row {row.Index}: {e}")
                 continue
 
             post_doc = result["post_doc"]

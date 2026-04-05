@@ -160,7 +160,7 @@ class DreamsPipeline:
             )
 
             if post_id == -1:
-                logger.error(f"Failed to insert row {idx} into SQLite. Skipping vector storage.")
+                logger.error(f"Failed to insert row {row.Index} into SQLite. Skipping vector storage.")
                 continue
 
             # Store embeddings in ChromaDB using SQLite's ID

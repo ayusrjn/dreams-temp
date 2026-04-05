@@ -270,8 +270,8 @@ def thematic_refresh(user_id):
                 'thematic_data': thematic_data
             }), 200
         except Exception as e:
-            current_app.logger.error(f"Error regenerating thematics: {e}")
-            return jsonify({'error': str(e)}), 500
+            current_app.logger.error(f"Error regenerating thematics", exc_info=e)
+            return jsonify({'error': 'Failed to refresh thematics'}), 500
     except Exception as e:
         return jsonify({
             "success": False,

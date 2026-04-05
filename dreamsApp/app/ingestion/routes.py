@@ -9,8 +9,11 @@ from flask_login import login_required
 from werkzeug.utils import secure_filename
 
 from . import bp
-from dreamsApp.core.clustering import cluster_keywords_for_all_users
-from dreamsApp.core.location_extractor import enrich_location
+from dreamsApp.core.extra.clustering import cluster_keywords_for_all_users
+from dreamsApp.core.extra.location_extractor import enrich_location, extract_gps_from_image
+from dreamsApp.core.extra.advanced_sentiment import get_chime_category
+from dreamsApp.core.extra.keywords import extract_keywords_and_vectors
+from dreamsApp.core.extra.image_captioning import get_image_caption
 from dreamsApp.core.vector_store import vector_store
 
 from sentence_transformers import SentenceTransformer
@@ -60,16 +63,27 @@ def _enrich_location_background(post_id, lat, lon, mongo_uri, db_name):
         logger.exception("Background location enrichment failed for post %s", post_id)
 
 
-def _store_keywords_background(user_id, post_id, keywords_with_vectors):
-    """Push keywords to ChromaDB in background thread with error handling."""
+def _store_embeddings_background(post_id, user_id, caption_embedding, image_embedding):
+    """Push document embeddings to ChromaDB in background thread."""
     try:
-        result = vector_store.store_keywords(user_id, post_id, keywords_with_vectors)
-        if result:
-            logger.info("Keywords stored in ChromaDB for post %s", post_id)
-        else:
-            logger.error("Failed to store keywords in ChromaDB for post %s (store_keywords returned False)", post_id)
+        if caption_embedding:
+            vector_store.store_vector(
+                collection_name="text_embeddings",
+                doc_id=str(post_id),
+                embedding=caption_embedding,
+                metadata={"user_id": user_id, "type": "caption"}
+            )
+        if image_embedding:
+            vector_store.store_vector(
+                collection_name="image_embeddings",
+                doc_id=str(post_id),
+                embedding=image_embedding,
+                metadata={"user_id": user_id, "type": "image"}
+            )
+        logger.info("Embeddings stored in ChromaDB for post %s", post_id)
+        
     except Exception:
-        logger.exception("Background keyword storage failed for post %s", post_id)
+        logger.exception("Background embeddings storage failed for post %s", post_id)
 
 
 @bp.route('/upload', methods=['POST'])
@@ -95,12 +109,54 @@ def upload_post():
     pipeline_result = pipeline.process_new_post(user_id, image_path, caption, timestamp)
     
     post_doc = pipeline_result["post_doc"]
-    keyword_type = pipeline_result["keyword_type"]
-    keywords_for_mongo = pipeline_result["keywords_for_db"]
-    keywords_with_vectors = pipeline_result["keywords_with_vectors"] # Needed for ChromaDB
-    gps_data = pipeline_result["gps_data"] # Needed for background enrichment
+    caption_embedding = pipeline_result.get("caption_embedding")
+    image_embedding = pipeline_result.get("image_embedding")
+    sentiment = post_doc.get("sentiment", {})
+    
+    # 1. Image Captioning
+    try:
+        generated_caption = get_image_caption(image_path)
+    except Exception as e:
+        logger.error(f"Image captioning failed: {e}")
+        generated_caption = caption
+        
+    # 2. CHIME Analysis
+    text_for_analysis = caption if (caption and caption.strip()) else generated_caption
+    try:
+        chime_result = get_chime_category(text_for_analysis)
+    except Exception as e:
+        logger.error(f"CHIME analysis failed: {e}")
+        chime_result = None
+
+    # 3. Keywords Extraction
+    keywords_with_vectors = []
+    keyword_type = None
+    keywords_for_mongo = []
+    
+    if sentiment.get('label') in ('positive', 'negative'):
+        try:
+            keywords_with_vectors = extract_keywords_and_vectors(generated_caption)
+            keyword_type = f"{sentiment['label']}_keywords"
+            if keywords_with_vectors:
+                keywords_for_mongo = [
+                    {k: v for k, v in kw.items() if k != "embedding"}
+                    for kw in keywords_with_vectors
+                ]
+        except Exception as e:
+            logger.error(f"Keyword extraction failed: {e}")
+            
+    # 4. Location Extraction locally
+    gps_data = extract_gps_from_image(image_path)
+    
+    # Add newly computed fields into the post_doc
+    if gps_data:
+        post_doc['location'] = gps_data
+    post_doc['generated_caption'] = generated_caption
+    post_doc['chime_analysis'] = chime_result
 
     mongo = current_app.mongo
+    
+    # We maintain previous keyword updating logic so older flask dashboards don't break
     if keywords_for_mongo and keyword_type:
         kw_update_result = mongo['keywords'].update_one(
             {'user_id': user_id},
@@ -119,10 +175,7 @@ def upload_post():
                     {'_id': kw_update_result.upserted_id},
                     {'$set': {'negative_keywords': []}}
                 )
-                
-    # We will defer pushing keywords to ChromaDB until we have the post_id
 
-    mongo = current_app.mongo
     insert_result = mongo['posts'].insert_one(post_doc)
 
     if not insert_result.acknowledged:
@@ -142,13 +195,14 @@ def upload_post():
             db_name,
         )
 
-    # Fire-and-forget: push extracted keywords into ChromaDB
-    if keywords_with_vectors:
+    # Fire-and-forget: push document embeddings into ChromaDB
+    if caption_embedding or image_embedding:
         _enrichment_executor.submit(
-            _store_keywords_background,
-            user_id,
+            _store_embeddings_background,
             str(insert_result.inserted_id),
-            keywords_with_vectors
+            user_id,
+            caption_embedding,
+            image_embedding
         )
 
     return jsonify({

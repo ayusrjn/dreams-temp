@@ -31,7 +31,8 @@ class DreamsPipeline:
         if timestamp_iso is None:
             timestamp_dt = datetime.now(timezone.utc)
         else:
-            timestamp_dt = datetime.fromisoformat(timestamp_iso)
+            dt = datetime.fromisoformat(timestamp_iso)
+            timestamp_dt = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
             
         # 1. Simple Sentiment (on Caption)
         sentiment = get_sentiment(

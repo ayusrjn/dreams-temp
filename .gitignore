@@ -5,6 +5,7 @@ __pycache__/
 
 # temp python file for local settings
 dreamsApp/temp.py
+data/chroma_db/chroma.sqlite3
 
 # local custom models for sentiments Prediction
 local_model/

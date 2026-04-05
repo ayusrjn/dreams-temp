@@ -60,7 +60,7 @@ optree==0.17.0
 packaging==25.0
 pandas==2.3.1
 pillow==11.3.0
-protobuf==5.29.5
+protobuf==5.29.6
 Pygments==2.19.2
 PySocks==1.7.1
 python-dateutil==2.9.0.post0

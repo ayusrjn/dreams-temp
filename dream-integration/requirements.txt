@@ -16,7 +16,7 @@ gdown==5.2.0
 google-pasta==0.2.0
 grpcio==1.74.0
 gunicorn==23.0.0
-h5py==3.14.0
+h5py==3.16.0
 hf-xet==1.1.5
 huggingface-hub==0.34.3
 idna==3.10

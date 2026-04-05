@@ -1,11 +1,14 @@
 import os
 import logging
+import threading
 import torch
 import requests
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
 
 logger = logging.getLogger(__name__)
+
+_blip_model_lock = threading.Lock()
 
 def load_image(path_or_url):
     if path_or_url.startswith("http://") or path_or_url.startswith("https://"):

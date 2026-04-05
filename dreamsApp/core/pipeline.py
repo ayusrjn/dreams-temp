@@ -125,14 +125,14 @@ class DreamsPipeline:
             return
 
         success_count = 0
-        for idx, row in tqdm(df.iterrows(), total=len(df), desc="Ingesting Posts"):
-            user_id = str(row["user_id"])
-            image_path = str(row["image_path"])
-            caption = str(row["caption"])
+        for row in tqdm(df.itertuples(), total=len(df), desc="Ingesting Posts"):
+            user_id = str(row.user_id)
+            image_path = str(row.image_path)
+            caption = str(row.caption)
             
             timestamp_iso = None
-            if "timestamp" in df.columns and pd.notna(row["timestamp"]):
-                timestamp_iso = str(row["timestamp"])
+            if "timestamp" in df.columns and pd.notna(row.timestamp):
+                timestamp_iso = str(row.timestamp)
             
             try:
                 result = self.process_new_post(

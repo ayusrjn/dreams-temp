@@ -8,7 +8,7 @@ DREAMS is an extension of the Beehive project, focused on exploring time and ord
 - Set up core infrastructure using Flask and Hugging Face models.
 - Implemented a basic **Caption Sentiment Analysis API** to classify emotional tone in user-submitted captions.
 - Integrating this API into Beehive to capture sentiment when users upload photos.
-- Exploring time-based data structuring and narrative analysis features.
+- Exploring time-based data structuring and narrative analysis featues.
 
 ### [View the API Module](./dreamsApp/README.md)
 

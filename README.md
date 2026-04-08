@@ -1,7 +1,7 @@
 # DREAMS
 Digitization for Recovery: Exploring Arts with Mining for Societal well-being.
 
-DREAMS is an extension of the Beehive project, focused on exploring time and ordering across photo memories to better understand personal recovery journeys. The goal is to build tools that help track and analyze visual narratives over time using data mining and intelligent processing.
+DREAMS is an extension of the Beehive project, focused on exploring time and ordering across photo memories to better understand personal recovery journeys. The goal is to build toolhat help track and analyze visual narratives over time using data mining and intelligent processing.
 
 ## Current Progress
 

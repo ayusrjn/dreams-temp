@@ -6,7 +6,7 @@ charset-normalizer==3.4.2
 click==8.2.1
 deepface==0.0.94
 filelock==3.20.3
-fire==0.7.0
+fire==0.7.1
 Flask==3.1.3
 flask-cors==6.0.2
 flatbuffers==25.2.10
